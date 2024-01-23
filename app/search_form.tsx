@@ -26,8 +26,7 @@ export const inputSearchSchema = z.object({
 
 export type InputSearchSchemaType = z.infer<typeof inputSearchSchema>;
 
-export default function SearchForm() {
-  const { search_input, updateInput } = useAppState();
+export default function SearchForm({search_input, updateInput}: {search_input: string, updateInput:(value: string) => void }) {
   console.log('input: ' + search_input)
   const form = useForm<InputSearchSchemaType>({
     resolver: zodResolver(inputSearchSchema),

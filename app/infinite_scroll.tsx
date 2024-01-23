@@ -19,9 +19,7 @@ function MoviewView({ movie }: { movie: MoviesData }) {
   )
 }
 
-export default function InfiniteScrollComponent() {
-  const { search_input, updateSearch: update_search } = useAppState();
-  console.log('change: ' + search_input);
+export default function InfiniteScrollComponent({search_input}: {search_input: string}) {
   return (
     <QueryClientProvider client={queryClient} >
       {
@@ -52,7 +50,7 @@ function ScrollComponent({ search_input }: { search_input: string }) {
     {
       queryKey: ['movies'],
       queryFn: fetchFunction,
-      getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
+      getNextPageParam: (lastPage, pages) => lastPage.page + 1,
       initialPageParam: 1
     }
   )

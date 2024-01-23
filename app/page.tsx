@@ -29,15 +29,15 @@ export default function Home() {
   //   return await data.json();
   // }
 
-  const { search_input } = useAppState();
+  const { search_input, updateInput } = useAppState();
 
   return (
 
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-gray-100">
 
       <div className="grid w-full max-w-sm items-center gap-1.5">
-        <SearchForm  />
-        <InfiniteScrollComponent  />
+        <SearchForm  search_input= {search_input} updateInput={updateInput}/>
+        <InfiniteScrollComponent search_input= {search_input} />
       </div>
 
     </main>
