@@ -26,24 +26,23 @@ export const inputSearchSchema = z.object({
 
 export type InputSearchSchemaType = z.infer<typeof inputSearchSchema>;
 
-export default function SearchForm({search_input, updateInput}: {search_input: string, updateInput:(value: string) => void }) {
-  console.log('input: ' + search_input)
+export default function SearchForm({serverAction}: {serverAction: (e: InputSearchSchemaType) => void}) {
+  const {search_input} = useAppState();
+
   const form = useForm<InputSearchSchemaType>({
     resolver: zodResolver(inputSearchSchema),
-    defaultValues: {
-      search_string: search_input
-    }
+    defaultValues: { search_string: '' },
+    values: { search_string: search_input || ''}
   });
 
-  function onSubmit(data: InputSearchSchemaType){
-    updateInput(data.search_string);
+  function action(data: InputSearchSchemaType){
+    serverAction(data);
   }
-  
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit( onSubmit )} className='space-y-3'>
+      <form onSubmit={form.handleSubmit(action)} className='space-y-3'>
         <FormField
-          control={form.control}
           name="search_string"
           render={({ field }) =>
             <FormItem>

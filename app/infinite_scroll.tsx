@@ -1,105 +1,76 @@
 'use client'
 
-import { QueryClientProvider, QueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { QueryClientProvider, QueryClient, useInfiniteQuery, InfiniteData } from "@tanstack/react-query";
 import React, { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
-import { useAppState } from "./store/zustand";
-import { MoviesData } from "@/lib/movies";
-import { Card, CardHeader } from "@/components/ui/card";
+import { Page, useAppState } from "./store/zustand";
 import { searchMovies } from "./actions/searchMovies";
+import { Button } from "@/components/ui/button";
+
 const queryClient = new QueryClient()
 
-function MoviewView({ movie }: { movie: MoviesData }) {
-  return (
-    <Card key={movie.id}>
-      <CardHeader>
-        {movie.title}
-      </CardHeader>
-    </Card>
-  )
-}
 
-export default function InfiniteScrollComponent({search_input}: {search_input: string}) {
+export default function InfiniteScrollComponent({ render }: { render: (data: InfiniteData<Page>) => JSX.Element }) {
   return (
     <QueryClientProvider client={queryClient} >
-      {
-        search_input
-          ? <ScrollComponent search_input={search_input} />
-          : ''
-      }
+      <ScrollComponent render={render} />
     </QueryClientProvider>
   )
 }
 
-function ScrollComponent({ search_input }: { search_input: string }) {
+function ScrollComponent({ render }: { render: (data: InfiniteData<Page>) => JSX.Element }) {
 
   const { ref, inView } = useInView();
+
+  const { search_input } = useAppState();
 
   const {
     status,
     data,
     error,
-    isFetching,
     isFetchingNextPage,
-    isFetchingPreviousPage,
     fetchNextPage,
-    fetchPreviousPage,
     hasNextPage,
-    hasPreviousPage,
-  } = useInfiniteQuery(
-    {
-      queryKey: ['movies'],
-      queryFn: fetchFunction,
-      getNextPageParam: (lastPage, pages) => lastPage.page + 1,
-      initialPageParam: 1
-    }
-  )
+  } = useInfiniteQuery({
+    queryKey: [search_input],
+    queryFn: fetchFunction,
+    getNextPageParam: (lastPage) => lastPage.page + 1,
+    initialPageParam: 2,
+  })
 
-  async function fetchFunction({ pageParam = 1 }) {
-    console.log(pageParam)
-    return await searchMovies({ data: { search_string: search_input }, pageParam: pageParam });
+  async function fetchFunction({pageParam = 1}) {
+    const results = await searchMovies(search_input, pageParam );
+    return results;
   }
 
   useEffect(() => {
     if (inView) fetchNextPage();
   }, [inView]);
-  console.log(data);
+
   return (
-    <div>{
-      status == 'pending'
-        ? <p>cargando...</p>
-        : status == 'error'
-          ? <p>Error</p>
-          : (
+    <div>
+      {status == 'error'
+        ? <p>{error.message}</p>
+        : (
+          <div className="min-h-screen">
+            {render(data as InfiniteData<Page>)}
             <div>
-              {
-                data.pages.map((page) => (
-                  <div key={page?.page}>
-                    {
-                      page?.results?.map((movies: MoviesData) =>
-                        <MoviewView movie={movies} ></MoviewView>
-                      )
-                    }
-                  </div>
-                ))
-              }
-              <div>
-                <button
-                  ref={ref}
-                  onClick={() => fetchNextPage()}
-                  disabled={!hasNextPage || isFetchingNextPage}
-                >
-                  {isFetchingNextPage
-                    ? 'Cargando más resultados...'
-                    : hasNextPage
-                      ? 'Cargar más'
-                      : 'Fin de los resultados'}
-                </button>
-              </div>
+              <Button
+                className="m-2"
+                ref={ref}
+                onClick={() => fetchNextPage()}
+                disabled={!hasNextPage || isFetchingNextPage}
+              >
+                {isFetchingNextPage
+                  ? 'Cargando más resultados...'
+                  : hasNextPage
+                    ? 'Cargar más'
+                    : 'Fin de los resultados'}
+              </Button>
             </div>
-          )
-    }
-      <p></p>
+          </div>
+        )
+      }
     </div>
   );
 

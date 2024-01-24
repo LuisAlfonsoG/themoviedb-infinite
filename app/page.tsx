@@ -1,46 +1,57 @@
 'use client'
-import Image from "next/image";
-import SearchForm, { InputSearchSchemaType } from './search_form';
-// import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import SearchForm from './search_form';
 import InfiniteScrollComponent from "./infinite_scroll";
+import { Page, useAppState } from "./store/zustand";
 import { searchMovies } from "./actions/searchMovies";
-import { useAppState } from "./store/zustand";
+import MovieCard from '@/components/ui/movieCard';
+import { InfiniteData } from '@tanstack/react-query';
 
 export default function Home() {
-  // async function submit(data: { search_string: string }) {
-  //   'use server'
-  //   const url = `https://api.themoviedb.org/3/search/movie?api_key=3a60787c4ac32131bc493505f2dc83bb&query=${data.search_string}&include_adult=false&language=en-US&page=1`;
-  //   const options = {
-  //     method: 'GET',
-  //     headers: {
-  //       accept: 'application/json',
-  //       // Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIzYTYwNzg3YzRhYzMyMTMxYmM0OTM1MDVmMmRjODNiYiIsInN1YiI6IjY1YWYwMTEzM2UyZWM4MDBlYmYwMWVmMSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.3Ca3Zf0aSy_QbFMtRsMe7qBpjayVqBgkQkmOigvWiY4'
-  //     }
-  //   };
 
-  //   const res = await fetch(url, options);
-  //   results = await res.json();
-  //   // console.log(data);
-  // }
+  const { search_results_by_pages, updateInput,  updatePages } = useAppState();
 
-  // async function refetch(){
-  //   'use server'
-  //   const data = await fetch('');
-  //   return await data.json();
-  // }
+  async function serverFetch(data: { search_string: string }) {
+    updateInput(data.search_string);
 
-  const { search_input, updateInput } = useAppState();
+    let result = await searchMovies(data.search_string);
+    updatePages(result);
+  }
+
 
   return (
 
-    <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-gray-100">
+    <main className="flex min-h-screen flex-col items-center justify-between p-2 sm:p-24 md:p-40 bg-gray-100 space-y-4">
 
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <SearchForm  search_input= {search_input} updateInput={updateInput}/>
-        <InfiniteScrollComponent search_input= {search_input} />
+      <div className="grid w-full max-w-sm items-center gap-1.5 bg-gray-300 p-2 rounded-sm border border-gray-500">
+        <SearchForm serverAction={serverFetch} />
+      </div>
+      <div className="w-full ">
+        <MovieList data={search_results_by_pages} />
+
+        {search_results_by_pages.pages.length > 0 ?
+          <InfiniteScrollComponent
+            render={(data: InfiniteData<Page>) => (
+              <>
+                <MovieList data={data} />
+              </>
+            )}
+          /> : ''}
       </div>
 
     </main>
 
   );
+}
+
+function MovieList({ data }: { data: InfiniteData<Page> }) {
+  return (
+    <>
+      {data?.pages.map(page => (
+        <div key={page?.page} className="grid items-center gap-2 m-2">
+          {page?.results.map(movie => <MovieCard key={movie.id} movie={movie} />)}
+        </div>
+      ))}
+    </>
+  )
 }
